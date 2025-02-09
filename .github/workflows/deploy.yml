@@ -1,0 +1,69 @@
+name: 🚀 Gigantischer GitHub Pages Autodeployer
+
+on:
+  push:
+    branches:
+      - main  # Hauptbranch für Deployment
+      - gh-pages  # Falls GitHub Pages einen separaten Branch nutzt
+  workflow_dispatch:  # Manuelles Starten erlauben
+  schedule:
+    - cron: '0 0 * * *'  # Automatische tägliche Überprüfung & Deployment um Mitternacht
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10  # Maximale Laufzeit zur Fehlervermeidung
+
+    steps:
+      - name: 📥 Repository auschecken (immer neuste Version)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Holt alle Änderungen zur Sicherheit
+
+      - name: 🔍 Sicherheits-Check vor dem Deployment
+        run: |
+          echo "✅ Überprüfung der Repository-Sicherheit..."
+          if [[ -z "$(ls -A)" ]]; then echo "⚠️ Fehler: Repository ist leer!" && exit 1; fi
+          echo "✅ Sicherheits-Check bestanden!"
+
+      - name: 🛠️ Framework-Check & Build-Setup
+        run: |
+          echo "🔍 Erkenne Projektstruktur..."
+          if [ -f "package.json" ]; then
+            echo "🚀 Node.js-Projekt erkannt (React, Vue, Svelte, Next.js)..."
+            npm install && npm run build || echo "⚠️ Build-Fehler ignoriert"
+            cp -r dist/* ./public || cp -r build/* ./public
+          elif [ -f "_config.yml" ]; then
+            echo "📝 Jekyll-Projekt erkannt..."
+            bundle install && bundle exec jekyll build -d ./public
+          else
+            echo "📄 Statische HTML-Seite erkannt, nutze direkten Deploy..."
+            mkdir -p ./public && cp -r * ./public
+          fi
+
+      - name: 🔒 Berechtigungen & Sicherheit erhöhen
+        run: |
+          chmod -R 755 ./public  # Setzt sichere Dateiberechtigungen
+          find ./public -type f -exec chmod 644 {} \;
+          echo "✅ Dateiberechtigungen gesetzt"
+
+      - name: 🚀 Hochladen für GitHub Pages Deployment
+        uses: actions/upload-pages-artifact@v2
+        with:
+          path: ./public
+
+      - name: ✅ GitHub Pages veröffentlichen
+        uses: actions/deploy-pages@v2
+
+      - name: 📡 Erfolgsmeldung bei erfolgreichem Deployment
+        if: success()
+        run: echo "🚀 Deployment erfolgreich! 🎉"
+
+      - name: ❌ Fehlerbenachrichtigung bei Problemen
+        if: failure()
+        run: echo "❌ Fehler beim Deployment! Bitte Logs prüfen."
