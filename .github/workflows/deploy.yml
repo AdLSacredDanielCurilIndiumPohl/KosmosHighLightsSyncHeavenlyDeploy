@@ -5,7 +5,7 @@ on:
     branches:
       - main  # Hauptbranch für Deployment
       - gh-pages  # Falls GitHub Pages einen separaten Branch nutzt
-  workflow_dispatch:  # Manuelles Starten erlauben
+  workflow_dispatch:
   schedule:
     - cron: '0 0 * * *'  # Automatische tägliche Überprüfung & Deployment um Mitternacht
 
@@ -17,13 +17,13 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 10  # Maximale Laufzeit zur Fehlervermeidung
+    timeout-minutes: 10
 
     steps:
-      - name: 📥 Repository auschecken (immer neuste Version)
+      - name: 📥 Repository auschecken (immer neueste Version)
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Holt alle Änderungen zur Sicherheit
+          fetch-depth: 0
 
       - name: 🔍 Sicherheits-Check vor dem Deployment
         run: |
@@ -48,14 +48,12 @@ jobs:
 
       - name: 🔒 Berechtigungen & Sicherheit erhöhen
         run: |
-          chmod -R 755 ./public  # Setzt sichere Dateiberechtigungen
+          chmod -R 755 ./public
           find ./public -type f -exec chmod 644 {} \;
           echo "✅ Dateiberechtigungen gesetzt"
 
       - name: 🚀 Hochladen für GitHub Pages Deployment
-        uses: actions/upload-pages-artifact@v2
-        with:
-          path: ./public
+        uses: actions/upload-pages-artifact@v2  # NEUE Version!
 
       - name: ✅ GitHub Pages veröffentlichen
         uses: actions/deploy-pages@v2
